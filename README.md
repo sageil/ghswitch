@@ -17,6 +17,8 @@ ssh-keygen -c -f ~/.ssh/private_key
 
 ### Installation
 
+#### The installation instruction assumes `/usr/local/bin/` is part of your shell's `$PATH` environment variable.
+
 ```sh
 sudo curl -L -o /usr/local/bin/ghswitch https://raw.githubusercontent.com/sageil/ghswitch/main/ghswitch && sudo chmod +x /usr/local/bin/ghswitch
 ```
