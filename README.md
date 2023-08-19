@@ -9,10 +9,10 @@
 ## Requirements
 
 For ghswitch to function, your ssh private key **must have a comment**.
-You can add a comment to an ssh private using using
+You can add a comment to an existing ssh private key using using
 
 ```sh
-ssh-keygen -c -f path_to_private_key
+ssh-keygen -c -f ~/.ssh/private_key
 ```
 
 ### Installation
@@ -37,4 +37,4 @@ sudo curl -L -o /usr/local/bin/ghswitch https://raw.githubusercontent.com/sageil
 
 ## Compatibility:
 
-ghswitch was tested on macOS ventura, Ubuntu and Almalinux using stand-alone Terminal Emulators and Visual Studio Code terminal emulator.
+ghswitch was tested on macOS ventura, Ubuntu and Almalinux using stand-alone Terminal Emulators and Visual Studio Code terminal.
