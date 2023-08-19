@@ -8,6 +8,8 @@
 
 ## Requirements
 
+github account must be configured to connect using ssh [Connect to github using SSH](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
+
 For ghswitch to function, your ssh private key **must have a comment**.
 You can add a comment to an existing ssh private key using using
 
