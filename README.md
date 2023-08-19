@@ -9,7 +9,7 @@
 ## Requirements
 
 For ghswitch to function, your ssh private key **must have a comment**.
-You can add a comment to an ssh private using using `ssh-keygen -c -f path_to_private_key`
+You can add a comment to an ssh private using using ```ssh-keygen -c -f path_to_private_key```
 
 ### Installation
 
