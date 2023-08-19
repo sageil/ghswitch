@@ -1,0 +1,104 @@
+#!/usr/bin/env bash
+declare emailPattern="^[a-z0-9!#\$%&'*+/=?^_\`{|}~-]+(\.[a-z0-9!#$%&'*+/=?^_\`{|}~-]+)*@([a-z0-9]([a-z0-9-]*[a-z0-9])?\.)+[a-z0-9]([a-z0-9-]*[a-z0-9])?\$"
+declare FILES=$(find $HOME/.ssh -type f ! \( -name "*.pub" -o -name "config" -o -name "known_hosts*" \))
+declare key_chain_options=""
+declare NC='\033[0m'
+declare RED='\033[0;31m'
+
+############################################################
+# Help                                                     #
+############################################################
+
+Help() {
+	# Display Help
+	echo "Using ghswitch."
+	echo
+	echo "Syntax: ghswitch [-t=  | -f= or --to= | --from=]"
+	echo "options:"
+	echo "t     The github account you want to switch to."
+	echo "f     The github account you are currentlty signed on."
+	echo "h     show this help text."
+	echo
+	echo "Example:"
+	echo -e "using long form \nghswitch --from=account@email.tld --to=account@mail.tld"
+	echo "Or"
+	echo -e "using short form \nghswitch -f=account@email.tld -t=account@mail.tld"
+	echo
+	printf "${RED}NOTE:If you used a phrase when creating your private github key, use that phrase instead of the email \n"
+}
+
+if [[ $# -ne 2 ]]; then
+	Help
+	exit 1
+fi
+while [ $# -gt 0 ]; do
+	case "$1" in
+	-f=* | --from=*)
+		from="${1#*=}"
+		;;
+	-t=* | --to=*)
+		to="${1#*=}"
+		;;
+	*)
+		Help
+		exit 1
+		;;
+	esac
+	shift
+done
+###################################################
+#validate Arguments
+###################################################
+if [[ -z "${from// /}" || -z "${to// /}" ]]; then
+	printf "${RED}Arguments cannot be empty${NC}\n"
+	exit 1
+fi
+###################################################
+#check if OS is mac to determine if --apple-use-keychain is required
+# when adding the key
+##################################################
+is_darwin() {
+	if [[ "$OSTYPE" == 'darwin'* ]]; then
+		key_chain_options="--apple-use-keychain"
+	fi
+}
+########################################################
+#signout from the currentlty signin account by remving the private key from ssh agent
+########################################################
+signout() {
+
+	for ssh_key_file in $FILES; do
+		RESULT=$(ssh-keygen -lf "$ssh_key_file")
+		if echo $RESULT | grep -F -- "$from" >/dev/null 2>&1; then
+			eval "(ssh-agent -s)" >/dev/null 2>&1
+			ssh-add -d "$key_chain_options" "$ssh_key_file" >/dev/null 2>&1
+			break
+		fi
+	done
+}
+#########################################################
+#signin & set git user.email if the comment provided is an email address
+#########################################################
+signin() {
+	local found=false
+
+	for ssh_key_file in $FILES; do
+		RESULT=$(ssh-keygen -lf "$ssh_key_file")
+		if echo $RESULT | grep -F -- "$to" >/dev/null 2>&1; then
+			found=true
+			if [[ $to =~ $emailPattern ]]; then
+				git config --global user.email "$to"
+			fi
+			ssh-add "$key_chain_options" "$ssh_key_file" >/dev/null 2>&1
+			ssh -T git@github.com
+			break
+		fi
+	done
+	if [[ $found == false ]]; then
+		printf "${RED}No private key with the comment '$to' was found in $HOME/.ssh/${NC}\n"
+		exit 1
+	fi
+}
+is_darwin
+signout
+signin
