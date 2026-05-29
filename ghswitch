@@ -87,13 +87,13 @@ signin() {
     if echo $RESULT | grep -F -- "$to" >/dev/null 2>&1; then
       found=true
       if [[ $to =~ $emailPattern ]]; then
-        git config --global user.email "$to"
+        echo "switching to $to"
       fi
       ssh-add "$key_chain_options" "$ssh_key_file" >/dev/null 2>&1
       ssh -T git@github.com 2>&1 |
         awk '{print substr($2, 1, length($2)-1)}' |
         xargs -I {} git config --global user.name "{}"
-      printf "${CYAN}Signed in as $(git config --global user.name) with email $(git config --global user.email)${NC}\n"
+      printf "${CYAN}Signed in as $(git config --global user.name)${NC}\n"
       break
     fi
   done
