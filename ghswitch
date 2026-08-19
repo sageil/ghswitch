@@ -77,10 +77,14 @@ signout() {
   done
 }
 #########################################################
-#signin & set git user.email if the comment provided is an email address
+#signin and set the Git identity from the authenticated GitHub account
 #########################################################
 signin() {
   local found=false
+  local ssh_result=""
+  local github_username=""
+  local github_user_id=""
+  local commit_email=""
 
   for ssh_key_file in $FILES; do
     RESULT=$(ssh-keygen -lf "$ssh_key_file")
@@ -90,10 +94,46 @@ signin() {
         echo "switching to $to"
       fi
       ssh-add "$key_chain_options" "$ssh_key_file" >/dev/null 2>&1
-      ssh -T git@github.com 2>&1 |
-        awk '{print substr($2, 1, length($2)-1)}' |
-        xargs -I {} git config --global user.name "{}"
-      printf "${CYAN}Signed in as $(git config --global user.name)${NC}\n"
+
+      ssh_result="$(ssh -T git@github.com 2>&1)"
+      github_username="$(
+        printf '%s\n' "$ssh_result" |
+          sed -n "s/^Hi \([^!]*\)! You've successfully authenticated.*$/\1/p"
+      )"
+
+      if [[ -z "$github_username" ]]; then
+        printf '%b%s%b\n' \
+          "$RED" \
+          "GitHub did not return the authenticated username." \
+          "$NC"
+        exit 1
+      fi
+
+      github_user_id="$(
+        curl --fail --silent --show-error --location \
+          --header "Accept: application/vnd.github+json" \
+          "https://api.github.com/users/$github_username" |
+          sed -n 's/^[[:space:]]*"id":[[:space:]]*\([0-9][0-9]*\),*$/\1/p' |
+          head -n 1
+      )"
+
+      if [[ -z "$github_user_id" ]]; then
+        printf '%b%s%b\n' \
+          "$RED" \
+          "GitHub did not return the account ID for '$github_username'." \
+          "$NC"
+        exit 1
+      fi
+
+      commit_email="${github_user_id}+${github_username}@users.noreply.github.com"
+
+      git config --global user.name "$github_username"
+      git config --global user.email "$commit_email"
+
+      printf '%b%s%b\n' \
+        "$CYAN" \
+        "Signed in as $github_username <$commit_email>" \
+        "$NC"
       break
     fi
   done
